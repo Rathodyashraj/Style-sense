@@ -1,0 +1,13 @@
+data
+
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+outfit_compatibility_final.egg-info
+outputs/checkpoints
+outputs/features
+outputs/logs
+PROJECT_DESCRIPTION.md
+

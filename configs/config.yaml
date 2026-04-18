@@ -1,0 +1,127 @@
+# =============================================================================
+#  configs/config.yaml
+#  Central configuration for the Outfit Compatibility Scorer.
+#  All hyper-parameters live here so that no magic numbers appear in code.
+# =============================================================================
+
+# ── Paths ─────────────────────────────────────────────────────────────────────
+paths:
+  dataset_root:       "data/polyvore"          # root of the Maryland Polyvore dataset
+  images_dir:         "data/polyvore/images"   # flat folder of item images (item_id.jpg)
+  train_json:         "data/polyvore/train_pairs.json"
+  val_json:           "data/polyvore/val_pairs.json"
+  test_json:          "data/polyvore/test_pairs.json"
+  category_json:      "data/polyvore/categories.json"
+  feature_cache_dir:  "outputs/features"       # HDF5 feature caches land here
+  checkpoint_dir:     "outputs/checkpoints"
+  results_dir:        "outputs/results"
+
+# ── Dataset ───────────────────────────────────────────────────────────────────
+dataset:
+  # The 20 canonical category labels in this cleaned Polyvore version
+  categories:
+    - Tops
+    - Skirts
+    - Pants
+    - Outerwear
+    - Dresses
+    - Jumpsuits
+    - Shoes
+    - Bags
+    - Earrings
+    - Necklaces
+    - Rings
+    - Bracelets
+    - Watches
+    - Hats
+    - Eyewear
+    - Gloves
+    - Legwear
+    - Neckwear
+    - Hairwear
+    - Brooch
+  image_size: [224, 224]    # resize target before all feature extractors
+
+# ── Module 1 : GrabCut Segmentation ──────────────────────────────────────────
+segmentation:
+  grabcut_iterations: 10          # GrabCut EM iterations
+  border_margin: 10               # pixels to treat as definite background seed
+  min_foreground_ratio: 0.05      # if foreground < 5 % of pixels, skip grabcut
+  # GMM component counts (OpenCV uses 5 internally; exposed here for documentation)
+  gmm_components: 5
+
+# ── Module 2 : Explicit Feature Extraction ───────────────────────────────────
+color_harmony:
+  n_dominant_colors: 5            # K in K-Means over L*a*b* pixels
+  kmeans_max_iter: 300
+  kmeans_n_init: 10
+  # Maximum pixel sample to keep K-Means fast on large images
+  max_pixel_sample: 50000
+
+texture:
+  # Gabor bank: 4 orientations × 4 scales = 16 filters
+  orientations: [0, 45, 90, 135]      # degrees
+  # Wavelengths (lambda) in pixels; small → fine texture, large → coarse
+  wavelengths: [4, 8, 16, 32]
+  # Standard sigma of the Gaussian envelope (σ = 0.56 × λ is a common heuristic)
+  sigma_to_lambda_ratio: 0.56
+  gabor_aspect_ratio: 0.5             # gamma — spatial aspect ratio
+  # Feature = [mean, variance] per filter → 16 × 2 = 32 dims
+  output_dims: 32
+
+shape:
+  # HOG parameters — scikit-image convention
+  hog_pixels_per_cell: [8, 8]
+  hog_cells_per_block: [2, 2]
+  hog_orientations: 9
+  # Resize image to this before HOG to keep descriptor length constant
+  hog_image_size: [128, 128]
+
+# ── Module 3 : Latent CLIP Extraction ────────────────────────────────────────
+clip:
+  # Options: "openai/clip-vit-base-patch32"  |  "patrickjohncyh/fashion-clip"
+  model_name: "patrickjohncyh/fashion-clip"
+  device: "cuda"                # "cuda" or "cpu"
+  batch_size: 64
+  embedding_dim: 512            # ViT-B/32 output dim
+
+# ── Module 4 : Fusion & Scoring ──────────────────────────────────────────────
+fusion:
+  # Explicit feature sub-vector lengths (auto-computed, documented here for clarity)
+  # color:   n_dominant_colors × 3 Lab channels  = 15
+  # texture: 32
+  # shape:   depends on hog_image_size / pixels_per_cell / cells_per_block / orientations
+  #          with 128×128, 8×8 cells, 2×2 blocks, 9 bins → 2916 dims (flattened)
+  # total explicit vector = 15 + 32 + shape_dims
+  #
+  # Pairwise feature for the classifier:
+  #   [euclidean_distance(explicit_A, explicit_B),  # scalar
+  #    cosine_similarity(clip_A, clip_B),            # scalar
+  #    explicit_A - explicit_B,                      # element-wise diff
+  #    explicit_A * explicit_B,                      # element-wise product (Hadamard)
+  #    clip_A - clip_B,                              # element-wise diff (latent)
+  #    clip_A * clip_B]                              # element-wise product (Hadamard)
+
+model:
+  type: "mlp"                   # "svm" | "mlp"
+
+  svm:
+    kernel: "rbf"
+    C: 1.0
+    gamma: "scale"
+    probability: true           # needed for predict_proba
+
+  mlp:
+    hidden_dims: [1024, 512, 256]
+    dropout: 0.4
+    learning_rate: 0.0005
+    batch_size: 512
+    epochs: 80
+    early_stopping_patience: 12
+    weight_decay: 0.0005
+
+# ── Training ─────────────────────────────────────────────────────────────────
+training:
+  val_split: 0.1
+  random_seed: 42
+  num_workers: 4                # DataLoader workers

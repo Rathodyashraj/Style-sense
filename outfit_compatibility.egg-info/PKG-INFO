@@ -1,0 +1,37 @@
+Metadata-Version: 2.4
+Name: outfit_compatibility
+Version: 1.0.0
+Summary: Graph-Based Stylistic Compatibility and Harmony Scorer using the Polyvore Outfits dataset.
+Author: Outfit Compatibility Scorer
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Scientific/Engineering :: Image Recognition
+Requires-Python: >=3.9
+Requires-Dist: numpy>=1.24.0
+Requires-Dist: scipy>=1.11.0
+Requires-Dist: scikit-learn>=1.3.0
+Requires-Dist: scikit-image>=0.21.0
+Requires-Dist: opencv-python>=4.8.0
+Requires-Dist: Pillow>=10.0.0
+Requires-Dist: torch>=2.0.0
+Requires-Dist: torchvision>=0.15.0
+Requires-Dist: transformers>=4.35.0
+Requires-Dist: open-clip-torch>=2.23.0
+Requires-Dist: pandas>=2.0.0
+Requires-Dist: tqdm>=4.66.0
+Requires-Dist: h5py>=3.9.0
+Requires-Dist: joblib>=1.3.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: loguru>=0.7.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: matplotlib>=3.7.0; extra == "dev"
+Requires-Dist: seaborn>=0.12.0; extra == "dev"
+Requires-Dist: notebook>=7.0.0; extra == "dev"
+Dynamic: author
+Dynamic: classifier
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

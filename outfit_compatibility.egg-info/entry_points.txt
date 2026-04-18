@@ -1,0 +1,5 @@
+[console_scripts]
+oc-evaluate = scripts.evaluate:main
+oc-extract = scripts.extract_features:main
+oc-infer = scripts.infer:main
+oc-train = scripts.train:main
