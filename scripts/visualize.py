@@ -1,45 +1,5 @@
 """
-scripts/visualize.py
-─────────────────────
-CLI script — Generate all visualisation plots and save them to disk.
-
-Produces two sets of figures:
-
-Set A — Pipeline visualisations (per-module CV feature inspection)
-─────────────────────────────────────────────────────────────────────
-  01_segmentation.png        GrabCut: original → mask → segmented
-  02_colour_palettes.png     Dominant L*a*b* palette swatches (Item A & B)
-  03_colour_rules_radar.png  Radar chart of the six colour harmony rules
-  04_gabor_responses.png     16-panel Gabor filter bank response grid
-  05_hog_shape.png           HOG gradient orientation map
-  06_explicit_features.png   Explicit feature sub-vector comparison bar chart
-
-Set B — Result visualisations (model evaluation)
-─────────────────────────────────────────────────────────────────────
-  r01_confusion_matrix.png   Confusion matrix heatmap
-  r02_roc_curve.png          ROC curve with AUC + optimal threshold
-  r03_pr_curve.png           Precision-Recall curve with AP
-  r04_harmony_distributions  Harmony score histograms + violin plots
-  r05_per_class_metrics.png  Precision / Recall / F1 by class
-  r06_calibration.png        Reliability diagram + probability histogram
-  r07_dashboard.png          All six plots in a single summary figure
-
-Usage
------
-    # All plots (pipeline + results)
-    python scripts/visualize.py
-
-    # Only pipeline visualisation (no trained model needed)
-    python scripts/visualize.py --mode pipeline
-
-    # Only result plots (requires trained model + evaluate.py already run)
-    python scripts/visualize.py --mode results
-
-    # Override which image pair to use for pipeline plots
-    python scripts/visualize.py --item1 123456 --item2 789012
-
-    # Save to a custom directory
-    python scripts/visualize.py --out_dir my_plots/
+CLI script — Generate all visualisation plots and save them.
 """
 
 from __future__ import annotations
@@ -69,9 +29,8 @@ from src.utils.logger            import get_logger
 log = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
+
 # Matplotlib style
-# ---------------------------------------------------------------------------
 
 def _apply_style() -> None:
     """Apply a clean, publication-friendly matplotlib style."""
@@ -87,9 +46,7 @@ def _apply_style() -> None:
     })
 
 
-# ---------------------------------------------------------------------------
 # Helper: convert L*a*b* palette vector → list of (R, G, B) tuples
-# ---------------------------------------------------------------------------
 
 def _lab_vec_to_rgb(vec: np.ndarray) -> list:
     """Convert a flat (K*3,) canonical L*a*b* vector to RGB tuples."""
@@ -118,9 +75,8 @@ def _lab_vec_to_rgb(vec: np.ndarray) -> list:
 
     return rgbs
 
-# ---------------------------------------------------------------------------
+
 # Helper: per-block L2 normalisation (mirrors train.py)
-# ---------------------------------------------------------------------------
 
 def _normalise_subblocks(
     vectors: np.ndarray, color_dim: int, texture_dim: int
@@ -139,9 +95,7 @@ def _normalise_subblocks(
     ], axis=1).astype(np.float32)
 
 
-# ===========================================================================
 # SET A — Pipeline visualisations
-# ===========================================================================
 
 def run_pipeline_plots(cfg, item_a_path: str, item_b_path: str, out_dir: Path) -> None:
     """Generate all per-module CV feature visualisations."""
@@ -158,7 +112,7 @@ def run_pipeline_plots(cfg, item_a_path: str, item_b_path: str, out_dir: Path) -
     img_a = load_image(item_a_path, size=img_size)
     img_b = load_image(item_b_path, size=img_size)
 
-    # ── Segmentation ─────────────────────────────────────────────────────────
+    # Segmentation 
     log.info("Running GrabCut segmentation …")
     segmenter = GrabCutSegmenter(
         grabcut_iterations   = cfg.segmentation.grabcut_iterations,
@@ -196,13 +150,13 @@ def run_pipeline_plots(cfg, item_a_path: str, item_b_path: str, out_dir: Path) -
     p = out_dir / "01_segmentation.png"
     plt.savefig(p); plt.close(); log.info("Saved {p}", p=p)
 
-    # ── Colour palettes ───────────────────────────────────────────────────────
+    # Colour palettes
     log.info("Extracting colour palettes …")
     color_ext = ColorHarmonyExtractor(n_dominant_colors=5)
     vec_a = color_ext.extract(seg_a)
     vec_b = color_ext.extract(seg_b)
 
-    # ✅ FIX: force vectors to expected palette size (5 colors × 3 = 15)
+    # FIX: force vectors to expected palette size (5 colors × 3 = 15)
     vec_a = vec_a[:15] if vec_a.size >= 15 else np.pad(vec_a, (0, 15 - vec_a.size))
     vec_b = vec_b[:15] if vec_b.size >= 15 else np.pad(vec_b, (0, 15 - vec_b.size))
     sw_a      = _lab_vec_to_rgb(vec_a)
@@ -238,7 +192,7 @@ def run_pipeline_plots(cfg, item_a_path: str, item_b_path: str, out_dir: Path) -
     p = out_dir / "02_colour_palettes.png"
     plt.savefig(p); plt.close(); log.info("Saved {p}", p=p)
 
-    # ── Colour rules radar ────────────────────────────────────────────────────
+    # Colour rules radar 
     log.info("Computing colour rule scores …")
     rule_scorer = ColorRuleScorer(n_dominant_colors=5)
     analysis    = rule_scorer.analyse(vec_a, vec_b)
@@ -280,7 +234,7 @@ def run_pipeline_plots(cfg, item_a_path: str, item_b_path: str, out_dir: Path) -
     p = out_dir / "03_colour_rules_radar.png"
     plt.savefig(p); plt.close(); log.info("Saved {p}", p=p)
 
-    # ── Gabor responses ───────────────────────────────────────────────────────
+    # Gabor responses
     log.info("Computing Gabor filter bank responses …")
     analyzer = TextureAnalyzer(
         orientations          = list(cfg.texture.orientations),
@@ -317,7 +271,7 @@ def run_pipeline_plots(cfg, item_a_path: str, item_b_path: str, out_dir: Path) -
     p = out_dir / "04_gabor_responses.png"
     plt.savefig(p); plt.close(); log.info("Saved {p}", p=p)
 
-    # ── HOG ──────────────────────────────────────────────────────────────────
+    #HOG
     log.info("Computing HOG descriptors …")
 
     def hog_vis(bgr, hog_size):
@@ -358,7 +312,7 @@ def run_pipeline_plots(cfg, item_a_path: str, item_b_path: str, out_dir: Path) -
     p = out_dir / "05_hog_shape.png"
     plt.savefig(p); plt.close(); log.info("Saved {p}", p=p)
 
-    # ── Explicit feature comparison ───────────────────────────────────────────
+    # Explicit feature comparison
     log.info("Extracting explicit feature vectors …")
     explicit_ext = ExplicitFeatureExtractor(cfg, scaler_path=None)
     exp_a_raw    = explicit_ext.extract(img_a)
@@ -404,9 +358,7 @@ def run_pipeline_plots(cfg, item_a_path: str, item_b_path: str, out_dir: Path) -
     log.info("All pipeline plots saved to {d}", d=out_dir)
 
 
-# ===========================================================================
 # SET B — Result visualisations
-# ===========================================================================
 
 def run_results_plots(cfg, out_dir: Path) -> None:
     """Generate all model evaluation plots."""
@@ -424,7 +376,7 @@ def run_results_plots(cfg, out_dir: Path) -> None:
     checkpoint_dir = Path(cfg.paths.checkpoint_dir)
     results_dir    = Path(cfg.paths.results_dir)
 
-    # ── Load scaler and normalisation metadata ────────────────────────────────
+    # Load scaler and normalisation metadata 
     scaler_path = checkpoint_dir / "explicit_scaler.pkl"
     if not scaler_path.exists():
         raise FileNotFoundError(
@@ -441,7 +393,7 @@ def run_results_plots(cfg, out_dir: Path) -> None:
     else:
         do_norm, color_dim, tex_dim = False, 15, 32
 
-    # ── Load test features from HDF5 ─────────────────────────────────────────
+    # Load test features from HDF5
     log.info("Loading test features from cache …")
     pairs  = load_pairs(cfg.paths.test_json)
     ea_l, eb_l, la_l, lb_l, labs = [], [], [], [], []
@@ -486,7 +438,7 @@ def run_results_plots(cfg, out_dir: Path) -> None:
     y_pred         = (y_prob >= 0.5).astype(np.int32)
     harmony_scores = y_prob * 100.0
 
-    # ── Precompute common metrics ─────────────────────────────────────────────
+    # Precompute common metric
     acc  = accuracy_score(y_true, y_pred)
     roc  = roc_auc_score(y_true, y_prob)
     ap   = average_precision_score(y_true, y_prob)
@@ -502,7 +454,7 @@ def run_results_plots(cfg, out_dir: Path) -> None:
         output_dict=True,
     )
 
-    # ── Plot 1: Confusion matrix ──────────────────────────────────────────────
+    # Plot 1: Confusion matrix
     from sklearn.metrics import ConfusionMatrixDisplay
     fig, ax = plt.subplots(figsize=(7, 6))
     disp = ConfusionMatrixDisplay(confusion_matrix=cm,
@@ -519,7 +471,7 @@ def run_results_plots(cfg, out_dir: Path) -> None:
     p = out_dir / "r01_confusion_matrix.png"
     plt.savefig(p); plt.close(); log.info("Saved {p}", p=p)
 
-    # ── Plot 2: ROC curve ─────────────────────────────────────────────────────
+    # Plot 2: ROC curve
     fig, ax = plt.subplots(figsize=(7, 7))
     ax.plot(fpr_, tpr_, color="steelblue", lw=2.5,
             label=f"ROC  (AUC = {roc:.4f})")
@@ -539,7 +491,7 @@ def run_results_plots(cfg, out_dir: Path) -> None:
     p = out_dir / "r02_roc_curve.png"
     plt.savefig(p); plt.close(); log.info("Saved {p}", p=p)
 
-    # ── Plot 3: PR curve ──────────────────────────────────────────────────────
+    # Plot 3: PR curve
     f1_scores = (2 * prec_ * rec_ /
                  np.where((prec_ + rec_) == 0, 1, prec_ + rec_))
     best_f1_idx = np.argmax(f1_scores[:-1])
@@ -561,7 +513,7 @@ def run_results_plots(cfg, out_dir: Path) -> None:
     p = out_dir / "r03_pr_curve.png"
     plt.savefig(p); plt.close(); log.info("Saved {p}", p=p)
 
-    # ── Plot 4: Harmony score distributions ───────────────────────────────────
+    # Plot 4: Harmony score distributions
     compat_sc   = harmony_scores[y_true == 1]
     incompat_sc = harmony_scores[y_true == 0]
 
@@ -604,7 +556,7 @@ def run_results_plots(cfg, out_dir: Path) -> None:
     p = out_dir / "r04_harmony_distributions.png"
     plt.savefig(p); plt.close(); log.info("Saved {p}", p=p)
 
-    # ── Plot 5: Per-class metrics bar chart ───────────────────────────────────
+    # Plot 5: Per-class metrics bar chart
     metrics = ["precision", "recall", "f1-score"]
     classes = ["Incompatible", "Compatible"]
     x = np.arange(len(metrics)); width = 0.32
@@ -632,7 +584,7 @@ def run_results_plots(cfg, out_dir: Path) -> None:
     p = out_dir / "r05_per_class_metrics.png"
     plt.savefig(p); plt.close(); log.info("Saved {p}", p=p)
 
-    # ── Plot 6: Calibration ───────────────────────────────────────────────────
+    # Plot 6: Calibration
     fig, axes = plt.subplots(1, 2, figsize=(13, 5))
     fig.suptitle("Calibration Analysis — Test Split",
                  fontsize=13, fontweight="bold")
@@ -661,7 +613,7 @@ def run_results_plots(cfg, out_dir: Path) -> None:
     p = out_dir / "r06_calibration.png"
     plt.savefig(p); plt.close(); log.info("Saved {p}", p=p)
 
-    # ── Plot 7: Summary dashboard ─────────────────────────────────────────────
+    # Plot 7: Summary dashboard
     fig = plt.figure(figsize=(14, 10))
     fig.suptitle("Model Performance Dashboard — Test Split",
                  fontsize=15, fontweight="bold", y=1.01)
@@ -744,9 +696,7 @@ def run_results_plots(cfg, out_dir: Path) -> None:
     log.info("All result plots saved to {d}", d=out_dir)
 
 
-# ===========================================================================
 # Entry-point
-# ===========================================================================
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -782,7 +732,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     log.info("Output directory: {d}", d=out_dir)
 
-    # ── Resolve item image paths for pipeline plots ───────────────────────────
+    # Resolve item image paths for pipeline plot
     if args.mode in ("all", "pipeline"):
         images_dir = Path(cfg.paths.images_dir)
         all_images = sorted(images_dir.glob("*.jpg"))

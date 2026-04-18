@@ -1,30 +1,3 @@
-"""
-src/features/color_harmony.py
-──────────────────────────────
-Module 2 (Part A) — Color Harmony Feature Extraction
-
-Theory
-------
-Human colour perception is best modelled in a *perceptually uniform* colour
-space where equal numeric distances correspond to equal perceived differences.
-CIE L*a*b* satisfies this property, unlike RGB or HSV.
-
-Pipeline
---------
-1.  Convert the segmented BGR image to CIE L*a*b*.
-2.  Sample up to *max_pixel_sample* foreground pixels (background = black is
-    excluded) to keep K-Means tractable on large images.
-3.  Fit K-Means with K = *n_dominant_colors* to discover the dominant colour
-    clusters.
-4.  Return each cluster centre (a 3-vector in L*a*b*) as the colour palette,
-    concatenated into a 1-D feature vector of length K × 3.
-
-The resulting K × 3 vector is then used:
-  - Directly as part of the explicit feature vector for distance calculation.
-  - To compute perceptual colour harmony rules (complementary, analogous,
-    triadic) during the scoring phase.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -36,10 +9,8 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# ColorHarmonyExtractor
-# ---------------------------------------------------------------------------
 
+# ColorHarmonyExtractor
 class ColorHarmonyExtractor:
     """
     Extracts a dominant-colour palette in CIE L*a*b* space using K-Means.

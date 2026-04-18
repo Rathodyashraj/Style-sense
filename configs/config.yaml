@@ -1,10 +1,7 @@
-# =============================================================================
-#  configs/config.yaml
 #  Central configuration for the Outfit Compatibility Scorer.
-#  All hyper-parameters live here so that no magic numbers appear in code.
-# =============================================================================
+#  All hyper-parameters are here
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
+# Paths 
 paths:
   dataset_root:       "data/polyvore"          # root of the Maryland Polyvore dataset
   images_dir:         "data/polyvore/images"   # flat folder of item images (item_id.jpg)
@@ -16,7 +13,7 @@ paths:
   checkpoint_dir:     "outputs/checkpoints"
   results_dir:        "outputs/results"
 
-# ── Dataset ───────────────────────────────────────────────────────────────────
+# Dataset
 dataset:
   # The 20 canonical category labels in this cleaned Polyvore version
   categories:
@@ -42,7 +39,7 @@ dataset:
     - Brooch
   image_size: [224, 224]    # resize target before all feature extractors
 
-# ── Module 1 : GrabCut Segmentation ──────────────────────────────────────────
+# Module 1 : GrabCut Segmentation
 segmentation:
   grabcut_iterations: 10          # GrabCut EM iterations
   border_margin: 10               # pixels to treat as definite background seed
@@ -50,7 +47,7 @@ segmentation:
   # GMM component counts (OpenCV uses 5 internally; exposed here for documentation)
   gmm_components: 5
 
-# ── Module 2 : Explicit Feature Extraction ───────────────────────────────────
+# Module 2 : Explicit Feature Extraction
 color_harmony:
   n_dominant_colors: 5            # K in K-Means over L*a*b* pixels
   kmeans_max_iter: 300
@@ -85,22 +82,8 @@ clip:
   batch_size: 64
   embedding_dim: 512            # ViT-B/32 output dim
 
-# ── Module 4 : Fusion & Scoring ──────────────────────────────────────────────
+# Module 4 : Fusion & Scoring
 fusion:
-  # Explicit feature sub-vector lengths (auto-computed, documented here for clarity)
-  # color:   n_dominant_colors × 3 Lab channels  = 15
-  # texture: 32
-  # shape:   depends on hog_image_size / pixels_per_cell / cells_per_block / orientations
-  #          with 128×128, 8×8 cells, 2×2 blocks, 9 bins → 2916 dims (flattened)
-  # total explicit vector = 15 + 32 + shape_dims
-  #
-  # Pairwise feature for the classifier:
-  #   [euclidean_distance(explicit_A, explicit_B),  # scalar
-  #    cosine_similarity(clip_A, clip_B),            # scalar
-  #    explicit_A - explicit_B,                      # element-wise diff
-  #    explicit_A * explicit_B,                      # element-wise product (Hadamard)
-  #    clip_A - clip_B,                              # element-wise diff (latent)
-  #    clip_A * clip_B]                              # element-wise product (Hadamard)
 
 model:
   type: "mlp"                   # "svm" | "mlp"
@@ -120,7 +103,7 @@ model:
     early_stopping_patience: 12
     weight_decay: 0.0005
 
-# ── Training ─────────────────────────────────────────────────────────────────
+# Training 
 training:
   val_split: 0.1
   random_seed: 42

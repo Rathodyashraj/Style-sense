@@ -1,23 +1,5 @@
 """
-scripts/train.py
-─────────────────
 CLI script — Train the outfit compatibility classifier.
-
-Pre-requisite
--------------
-Run ``scripts/extract_features.py`` first so the HDF5 feature caches exist.
-
-What this script does
----------------------
-1. Load cached explicit and latent feature vectors for every training pair.
-2. Build pairwise feature vectors using ``PairwiseScorer``.
-3. Fit a ``StandardScaler`` on the explicit features (saved for inference).
-4. Train the SVM or MLP classifier (selected via config).
-5. Save the best model checkpoint to ``outputs/checkpoints/``.
-
-Usage
------
-    python scripts/train.py [--config PATH] [--model svm|mlp]
 """
 
 from __future__ import annotations
@@ -44,23 +26,13 @@ from src.utils.logger            import get_logger
 log = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
 # Data assembly helpers
-# ---------------------------------------------------------------------------
-
 def _load_pairwise_dataset(
     pairs_json: str | Path,
     cache: FeatureCache,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Load cached feature vectors for every compatible/incompatible pair.
-
-    Returns
-    -------
-    explicit_a, explicit_b : (N, D_exp)  explicit feature matrices
-    latent_a,   latent_b   : (N, D_lat)  CLIP embedding matrices
-    labels                 : (N,)        int array of 0/1 labels
-    """
+    
+    #Load cached feature vectors for every compatible/incompatible pair.
     pairs = load_pairs(pairs_json)
 
     explicit_a_list, explicit_b_list = [], []
@@ -100,9 +72,7 @@ def _load_pairwise_dataset(
     )
 
 
-# ---------------------------------------------------------------------------
 # Main training routine
-# ---------------------------------------------------------------------------
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train the outfit compatibility classifier.")
@@ -118,7 +88,7 @@ def main() -> None:
     checkpoint_dir = Path(cfg.paths.checkpoint_dir)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    # ── Step 1: Load cached features for the training split ──────────────────
+    # Step 1: Load cached features for the training split
     log.info("Loading training pair features from HDF5 cache …")
     with FeatureCache(cfg.paths.feature_cache_dir, split="train") as cache:
         exp_a, exp_b, lat_a, lat_b, labels = _load_pairwise_dataset(
@@ -132,7 +102,7 @@ def main() -> None:
         neg=(labels == 0).sum(),
     )
 
-    # ── Step 2: Fit StandardScaler on the raw explicit features ──────────────
+    # Step 2: Fit StandardScaler on the raw explicit features 
     # We fit on the concatenation of A and B explicit vectors so the scaler
     # sees the full marginal distribution of each feature dimension.
     all_explicit = np.vstack([exp_a, exp_b])
@@ -148,7 +118,7 @@ def main() -> None:
     joblib.dump(scaler, scaler_path)
     log.info("StandardScaler fitted and saved to {p}", p=scaler_path)
 
-    # ── Step 3: Build pairwise feature matrix ─────────────────────────────────
+    # Step 3: Build pairwise feature matrix 
     log.info("Building pairwise feature vectors …")
     scorer    = PairwiseScorer()
     X_pairwise = scorer.build_pairwise_batch(exp_a_scaled, exp_b_scaled, lat_a, lat_b)
@@ -156,7 +126,7 @@ def main() -> None:
 
     log.info("Pairwise feature matrix: shape=%s", X_pairwise.shape)
 
-    # ── Step 3b: Fit StandardScaler on the *full* pairwise vector ─────────────
+    # Step 3b: Fit StandardScaler on the full pairwise vector
     # The pairwise vector concatenates heterogeneous blocks (scalars, diffs,
     # hadamards) at very different numeric scales.  Normalising the assembled
     # vector before the classifier significantly improves convergence.
@@ -167,7 +137,7 @@ def main() -> None:
     joblib.dump(pairwise_scaler, pairwise_scaler_path)
     log.info("Pairwise StandardScaler fitted and saved to {p}", p=pairwise_scaler_path)
 
-    # ── Step 4: Train / validation split ─────────────────────────────────────
+    # Step 4: Train / validation split
     val_split   = cfg.training.val_split
     random_seed = cfg.training.random_seed
 
@@ -181,11 +151,11 @@ def main() -> None:
         "Split: train=%d  val=%d", len(y_train), len(y_val)
     )
 
-    # ── Step 5: Instantiate and train the model ───────────────────────────────
+    # Step 5: Instantiate and train the model
     model = build_model(cfg)
     model.fit(X_train, y_train, X_val=X_val, y_val=y_val)
 
-    # ── Step 6: Save model checkpoint ────────────────────────────────────────
+    # Step 6: Save model checkpoint
     model_type = cfg.model.type.lower()
     if model_type == "mlp":
         ckpt_path = checkpoint_dir / "best_model.pt"

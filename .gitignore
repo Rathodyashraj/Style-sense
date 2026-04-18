@@ -5,7 +5,8 @@ __pycache__
 *.pyc
 *.pyo
 *.pyd
-outfit_compatibility_final.egg-info
+
+outfit_compatibility.egg-info
 outputs/checkpoints
 outputs/features
 outputs/logs

@@ -1,22 +1,7 @@
 """
-scripts/extract_features.py
-─────────────────────────────
 CLI script — Pre-compute and cache all explicit CV features and CLIP latent
 embeddings for the entire Polyvore dataset.
 
-This is a one-time (or on-demand) pre-processing step.  Running it before
-`train.py` means the training loop never re-runs expensive feature extraction.
-
-Usage
------
-    python scripts/extract_features.py [--config PATH] [--split SPLIT]
-
-Arguments
----------
---config  : path to config YAML  (default: configs/config.yaml)
---split   : "train" | "val" | "test" | "all"  (default: "all")
---device  : "cuda" | "cpu"  (overrides config)
---dry_run : if set, process only the first 100 items per split (for testing)
 """
 
 from __future__ import annotations
@@ -25,7 +10,7 @@ import argparse
 import sys
 from pathlib import Path
 
-# ── Allow running from the project root without pip install ──────────────────
+# Allow running from the project root without pip install 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
@@ -46,12 +31,10 @@ from src.utils.logger                import get_logger
 log = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def _collect_unique_ids_for_split(pairs_json: Path) -> list:
-    """Return the de-duplicated item IDs appearing in a pairs JSON file."""
+    #Return the de-duplicated item IDs appearing in a pairs JSON file.
     pairs = load_pairs(pairs_json)
     ids: set = set()
     for p in pairs:
@@ -60,9 +43,8 @@ def _collect_unique_ids_for_split(pairs_json: Path) -> list:
     return sorted(ids)
 
 
-# ---------------------------------------------------------------------------
+
 # Main extraction routine for one split
-# ---------------------------------------------------------------------------
 
 def extract_split(
     split: str,
@@ -71,20 +53,10 @@ def extract_split(
     latent_extractor:   LatentFeatureExtractor,
     dry_run: bool = False,
 ) -> None:
-    """
-    Extract and cache both explicit and latent features for all items in *split*.
 
-    Parameters
-    ----------
-    split              : "train" | "val" | "test"
-    cfg                : dot-accessible config namespace
-    explicit_extractor : initialised ExplicitFeatureExtractor
-    latent_extractor   : initialised LatentFeatureExtractor
-    dry_run            : if True, only process the first 100 items
-    """
     log.info("═══ Extracting features for split: {s} ═══", s=split)
 
-    # ── Resolve the pairs JSON for this split ─────────────────────────────────
+    # Resolve the pairs JSON for this split
     split_json_map = {
         "train": cfg.paths.train_json,
         "val":   cfg.paths.val_json,
@@ -107,10 +79,10 @@ def extract_split(
         item_ids = item_ids[:100]
         log.info("Dry-run mode: processing only {n} items.", n=len(item_ids))
 
-    # ── Open the feature cache for this split ─────────────────────────────────
+    # Open the feature cache for this split
     with FeatureCache(cfg.paths.feature_cache_dir, split=split) as cache:
 
-        # ── Pass 1: Explicit CV features ──────────────────────────────────────
+        # Pass 1: Explicit CV features
         ids_missing_explicit = [
             iid for iid in item_ids if not cache.has_explicit(iid)
         ]
@@ -127,7 +99,7 @@ def extract_split(
             except Exception as exc:
                 log.warning("Explicit extraction failed for {id}: {e}", id=item_id, e=exc)
 
-        # ── Pass 2: CLIP latent features (batched) ────────────────────────────
+        # Pass 2: CLIP latent features (batched)
         ids_missing_latent = [
             iid for iid in item_ids if not cache.has_latent(iid)
         ]
@@ -156,9 +128,7 @@ def extract_split(
     log.info("Feature extraction complete for split: {s}", s=split)
 
 
-# ---------------------------------------------------------------------------
 # Entry-point
-# ---------------------------------------------------------------------------
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -178,7 +148,7 @@ def main() -> None:
     if args.device:
         cfg.clip.device = args.device
 
-    # ── Initialise extractors once and reuse across splits ───────────────────
+    # Initialise extractors once and reuse across splits
     log.info("Initialising feature extractors …")
     explicit_extractor = ExplicitFeatureExtractor(cfg, scaler_path=None)
     latent_extractor   = LatentFeatureExtractor(

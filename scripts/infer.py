@@ -1,25 +1,5 @@
 """
-scripts/infer.py
-─────────────────
 CLI script — Score the compatibility between two garment images.
-
-Usage
------
-    # Score a pair of images
-    python scripts/infer.py --item1 path/to/shirt.jpg --item2 path/to/pants.jpg
-
-    # Score from a JSON file containing a list of pairs
-    python scripts/infer.py --pairs_json my_pairs.json --output results.json
-
-    # Use a non-default config
-    python scripts/infer.py --item1 a.jpg --item2 b.jpg --config configs/config.yaml
-
-Pairs JSON format (for batch mode)
------------------------------------
-[
-    {"item_1": "path/to/a.jpg", "item_2": "path/to/b.jpg"},
-    ...
-]
 """
 
 from __future__ import annotations
@@ -39,9 +19,6 @@ from src.utils.logger            import get_logger
 log = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Pretty printer
-# ---------------------------------------------------------------------------
 
 _VERDICT_COLORS = {
     "Excellent Match": "\033[92m",   # green
@@ -76,9 +53,9 @@ def _print_result(item1: str, item2: str, result) -> None:
     print()
 
 
-# ---------------------------------------------------------------------------
+
 # Entry-point
-# ---------------------------------------------------------------------------
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -97,7 +74,7 @@ def main() -> None:
     parser.add_argument("--device",  default=None, help="Override device: cuda | cpu")
     args = parser.parse_args()
 
-    # ── Validate arguments ────────────────────────────────────────────────────
+    # Validate arguments
     if args.item1 is None and args.pairs_json is None:
         parser.error("Provide either --item1/--item2 for single mode "
                      "or --pairs_json for batch mode.")
@@ -106,16 +83,14 @@ def main() -> None:
     if args.device:
         cfg.clip.device = args.device
 
-    # ── Build and load the scorer ─────────────────────────────────────────────
+    # Build and load the scorer
     scaler_path = Path(cfg.paths.checkpoint_dir) / "explicit_scaler.pkl"
     scorer = HarmonyScorer.from_config(cfg, scaler_path=scaler_path if scaler_path.exists() else None)
     scorer.load_model(cfg.paths.checkpoint_dir)
 
     image_size = tuple(cfg.dataset.image_size)
 
-    # ─────────────────────────────────────────────────────────────────────────
     # Single-pair mode
-    # ─────────────────────────────────────────────────────────────────────────
     if args.item1 is not None:
         if args.item2 is None:
             parser.error("--item2 is required when --item1 is provided.")
@@ -126,9 +101,7 @@ def main() -> None:
         result = scorer.score(image_a, image_b)
         _print_result(args.item1, args.item2, result)
 
-    # ─────────────────────────────────────────────────────────────────────────
     # Batch mode
-    # ─────────────────────────────────────────────────────────────────────────
     else:
         with open(args.pairs_json) as fh:
             pairs = json.load(fh)
