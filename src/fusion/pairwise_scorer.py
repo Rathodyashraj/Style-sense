@@ -56,13 +56,10 @@ class PairwiseScorer:
         #5. Hadamard product of latent vectors: A ⊙ B
         latent_hadamard = (latent_a * latent_b).astype(np.float32)
 
+        
+        
         pairwise = np.concatenate([
-            euclidean_dist,      # 1 dim
-            cosine_sim,          # 1 dim
-            explicit_diff,       # D_exp dims
-            explicit_hadamard,   # D_exp dims
-            latent_diff,         # D_lat dims
-            latent_hadamard,     # D_lat dims
+            euclidean_dist,cosine_sim, explicit_diff, explicit_hadamard,latent_diff,latent_hadamard,     
         ])
 
         log.debug(
