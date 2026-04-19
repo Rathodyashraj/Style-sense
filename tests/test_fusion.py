@@ -1,9 +1,3 @@
-"""
-tests/test_fusion.py
-─────────────────────
-Unit tests for the PairwiseScorer (Module 4a).
-"""
-
 from __future__ import annotations
 
 import sys
@@ -17,9 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.fusion.pairwise_scorer import PairwiseScorer
 
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
+
 
 def _random_explicit(seed: int = 0, dim: int = 100) -> np.ndarray:
     rng = np.random.default_rng(seed)
@@ -32,9 +24,7 @@ def _random_latent(seed: int = 0, dim: int = 512) -> np.ndarray:
     return v / np.linalg.norm(v)   # L2-normalised
 
 
-# ---------------------------------------------------------------------------
-# Tests
-# ---------------------------------------------------------------------------
+
 
 class TestPairwiseScorer:
 

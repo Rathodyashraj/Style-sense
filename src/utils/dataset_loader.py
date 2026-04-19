@@ -1,35 +1,3 @@
-"""
-src/utils/dataset_loader.py
-────────────────────────────
-Polyvore Outfits dataset utilities.
-
-Responsibilities
-----------------
-* Parse the JSON compatibility-pair files produced by the Maryland Polyvore
-  cleaning pipeline.
-* Resolve item IDs to their image paths.
-* Provide a PyTorch Dataset for iterating over (item_A, item_B, label) triples
-  during training and evaluation.
-
-Expected JSON format (train_pairs.json / val_pairs.json / test_pairs.json)
-─────────────────────────────────────────────────────────────────────────────
-[
-    {
-        "item_1": "item_id_string",
-        "item_2": "item_id_string",
-        "label":  1          // 1 = compatible, 0 = incompatible
-    },
-    ...
-]
-
-Expected categories.json format
-────────────────────────────────
-{
-    "item_id_string": "Tops",
-    ...
-}
-"""
-
 from __future__ import annotations
 
 import json
@@ -45,18 +13,8 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Low-level JSON parsers
-# ---------------------------------------------------------------------------
-
 def load_pairs(json_path: str | Path) -> List[Dict]:
-    """
-    Load compatibility pairs from a JSON file.
 
-    Returns
-    -------
-    list of dict — each dict has keys: item_1, item_2, label (int 0 or 1).
-    """
     json_path = Path(json_path)
     if not json_path.exists():
         raise FileNotFoundError(f"Pairs file not found: {json_path}")
@@ -69,13 +27,7 @@ def load_pairs(json_path: str | Path) -> List[Dict]:
 
 
 def load_categories(json_path: str | Path) -> Dict[str, str]:
-    """
-    Load the item → category mapping.
 
-    Returns
-    -------
-    dict mapping item_id (str) → category label (str).
-    """
     json_path = Path(json_path)
     if not json_path.exists():
         log.warning("Category file not found: {p}. "
@@ -89,26 +41,10 @@ def load_categories(json_path: str | Path) -> Dict[str, str]:
     return categories
 
 
-# ---------------------------------------------------------------------------
-# Path resolver
-# ---------------------------------------------------------------------------
+
 
 def build_item_image_map(images_dir: str | Path) -> Dict[str, Path]:
-    """
-    Scan *images_dir* and build a dict mapping item_id → image Path.
 
-    Accepts any common image extension.  The item_id is the filename stem
-    (everything before the first dot).
-
-    Parameters
-    ----------
-    images_dir : str | Path
-        Directory that contains flat item images named ``<item_id>.<ext>``.
-
-    Returns
-    -------
-    dict  item_id → Path
-    """
     images_dir = Path(images_dir)
     _EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
     item_map: Dict[str, Path] = {}
@@ -121,29 +57,10 @@ def build_item_image_map(images_dir: str | Path) -> Dict[str, Path]:
     return item_map
 
 
-# ---------------------------------------------------------------------------
-# PyTorch Dataset
-# ---------------------------------------------------------------------------
+
 
 class PolyvoreCompatibilityDataset(Dataset):
-    """
-    Iterable dataset of (image_A, image_B, label) triplets.
 
-    Each ``__getitem__`` call returns:
-      - ``image_a``  : np.ndarray (H, W, 3) BGR uint8 — first item
-      - ``image_b``  : np.ndarray (H, W, 3) BGR uint8 — second item
-      - ``label``    : int  (1 = compatible, 0 = incompatible)
-      - ``item_ids`` : Tuple[str, str]  — for cache key look-ups
-
-    Parameters
-    ----------
-    pairs_json   : path to the split's JSON pairs file.
-    images_dir   : directory containing flat item images.
-    image_size   : (W, H) resize target, default (224, 224).
-    categories   : optional dict item_id → category label.
-    max_samples  : if set, truncate dataset to this many pairs (useful for
-                   quick debugging runs).
-    """
 
     def __init__(
         self,
@@ -181,7 +98,7 @@ class PolyvoreCompatibilityDataset(Dataset):
         log.info("Dataset ready — {tot} pairs | {p} positive | {n} negative",
                  tot=len(self.pairs), p=n_pos, n=n_neg)
 
-    # ── Dataset interface ─────────────────────────────────────────────────────
+
 
     def __len__(self) -> int:
         return len(self.pairs)
@@ -201,7 +118,6 @@ class PolyvoreCompatibilityDataset(Dataset):
             "item_ids": (id_a, id_b),
         }
 
-    # ── Convenience helpers ───────────────────────────────────────────────────
 
     def get_labels(self) -> np.ndarray:
         """Return all labels as a numpy array (useful for stratified splits)."""

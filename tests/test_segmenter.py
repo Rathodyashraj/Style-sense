@@ -1,11 +1,3 @@
-"""
-tests/test_segmenter.py
-────────────────────────
-Unit tests for the GrabCutSegmenter (Module 1).
-
-Tests use synthetically generated images so no dataset is required.
-"""
-
 from __future__ import annotations
 
 import numpy as np
@@ -18,9 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.preprocessing.segmenter import GrabCutSegmenter
 
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
+
 
 def _make_synthetic_image(h: int = 128, w: int = 128) -> np.ndarray:
     """Create a synthetic BGR image: white square on black background."""
@@ -30,9 +20,7 @@ def _make_synthetic_image(h: int = 128, w: int = 128) -> np.ndarray:
     return img
 
 
-# ---------------------------------------------------------------------------
-# Tests
-# ---------------------------------------------------------------------------
+
 
 class TestGrabCutSegmenter:
 

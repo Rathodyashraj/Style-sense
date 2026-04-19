@@ -1,10 +1,3 @@
-"""
-tests/test_models.py
-─────────────────────
-Unit tests for the MLP and SVM classifiers.
-
-Tests use small synthetic datasets so they run in seconds without a GPU.
-"""
 
 from __future__ import annotations
 
@@ -21,9 +14,7 @@ from src.models.mlp_classifier import MLPCompatibilityClassifier
 from src.models.svm_classifier import SVMCompatibilityClassifier
 
 
-# ---------------------------------------------------------------------------
-# Synthetic dataset factory
-# ---------------------------------------------------------------------------
+
 
 def _make_synthetic_dataset(
     n_samples: int = 200, n_features: int = 64, seed: int = 42
@@ -33,10 +24,6 @@ def _make_synthetic_dataset(
     y   = rng.integers(0, 2, size=n_samples).astype(np.float32)
     return X, y
 
-
-# ---------------------------------------------------------------------------
-# MLP tests
-# ---------------------------------------------------------------------------
 
 class TestMLPClassifier:
 
@@ -95,9 +82,6 @@ class TestMLPClassifier:
             model.predict(np.zeros((5, 32), dtype=np.float32))
 
 
-# ---------------------------------------------------------------------------
-# SVM tests
-# ---------------------------------------------------------------------------
 
 class TestSVMClassifier:
 

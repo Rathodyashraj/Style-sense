@@ -1,20 +1,4 @@
-"""
-src/utils/feature_cache.py
-──────────────────────────
-HDF5-backed feature cache.
 
-Why HDF5?
----------
-Feature extraction (especially CLIP) is expensive.  Rather than re-running the
-encoder every training epoch, we serialise each item's feature vector to disk
-exactly once.  Subsequent runs retrieve vectors in O(1) via item_id key.
-
-The cache stores two HDF5 groups:
-    /explicit/   — deterministic CV feature vectors (float32)
-    /latent/     — CLIP embedding vectors            (float32)
-
-Both groups use the item_id string as the dataset key.
-"""
 
 from __future__ import annotations
 
@@ -29,24 +13,8 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# FeatureCache
-# ---------------------------------------------------------------------------
 
 class FeatureCache:
-    """
-    Read/write interface for persisted feature vectors.
-
-    Parameters
-    ----------
-    cache_dir : str | Path
-        Directory where HDF5 files are stored.
-    split : str
-        Dataset split name (e.g. "train", "val", "test").
-        Determines the HDF5 filename: ``<cache_dir>/<split>_features.h5``.
-    read_only : bool
-        Open in read-only mode (e.g., during inference).
-    """
 
     _EXPLICIT_GROUP = "explicit"
     _LATENT_GROUP   = "latent"
@@ -61,7 +29,6 @@ class FeatureCache:
         self._mode = "r" if read_only else "a"   # 'a' = read/write, create if absent
         self._file: Optional[h5py.File] = None
 
-    # ── Context-manager protocol ──────────────────────────────────────────────
 
     def __enter__(self) -> "FeatureCache":
         self.open()
@@ -86,7 +53,7 @@ class FeatureCache:
             self._file.close()
             self._file = None
 
-    # ── Write helpers ─────────────────────────────────────────────────────────
+
 
     def save_explicit(self, item_id: str, vector: np.ndarray) -> None:
         """Persist an explicit CV feature vector for *item_id*."""
@@ -114,7 +81,6 @@ class FeatureCache:
         for item_id, vector in batch.items():
             self.save_latent(item_id, vector)
 
-    # ── Read helpers ──────────────────────────────────────────────────────────
 
     def load_explicit(self, item_id: str) -> Optional[np.ndarray]:
         """
@@ -158,7 +124,6 @@ class FeatureCache:
         self._assert_open()
         return list(self._file[self._LATENT_GROUP].keys())
 
-    # ── Internal ─────────────────────────────────────────────────────────────
 
     def _assert_open(self) -> None:
         if self._file is None:

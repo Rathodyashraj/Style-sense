@@ -1,14 +1,3 @@
-"""
-src/models/model_factory.py
-────────────────────────────
-Factory that instantiates the correct classifier based on the config key
-``model.type`` ("svm" | "mlp").
-
-Keeping object creation in one place means scripts never import SVM or MLP
-classes directly — they always go through ``build_model(cfg)``.  This makes
-it trivial to add new model types (e.g. GBM, LogReg) without touching scripts.
-"""
-
 from __future__ import annotations
 
 from typing import Union
@@ -24,21 +13,7 @@ CompatibilityModel = Union[SVMCompatibilityClassifier, MLPCompatibilityClassifie
 
 
 def build_model(cfg) -> CompatibilityModel:
-    """
-    Instantiate and return the classifier specified in *cfg.model.type*.
 
-    Parameters
-    ----------
-    cfg : dot-accessible config namespace (from ``load_config()``).
-
-    Returns
-    -------
-    SVMCompatibilityClassifier  or  MLPCompatibilityClassifier
-
-    Raises
-    ------
-    ValueError  if ``cfg.model.type`` is not recognised.
-    """
     model_type = cfg.model.type.lower()
     log.info("Building model of type: '{t}'", t=model_type)
 
@@ -52,7 +27,7 @@ def build_model(cfg) -> CompatibilityModel:
 
     if model_type == "mlp":
         mlp_cfg = cfg.model.mlp
-        device  = cfg.clip.device          # reuse the same device preference
+        device  = cfg.clip.device          
         return MLPCompatibilityClassifier(
             hidden_dims             = list(mlp_cfg.hidden_dims),
             dropout                 = float(mlp_cfg.dropout),

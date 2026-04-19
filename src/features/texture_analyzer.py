@@ -1,38 +1,3 @@
-"""
-src/features/texture_analyzer.py
-─────────────────────────────────
-Module 2 (Part B) — Texture Signature via Gabor Filter Bank
-
-Theory
-------
-A Gabor filter is a sinusoidal plane wave modulated by a Gaussian envelope.
-It is jointly localised in *both* spatial and frequency domains — analogous
-to the human visual cortex's simple-cell receptive fields.
-
-For texture analysis we build a *filter bank* by varying two parameters:
-
-  θ  (orientation) — detects edges / ridges at a specific angle.
-               Stripe fabric → strong response at the stripe's normal angle.
-               Smooth fabric  → uniformly low response across all θ.
-
-  λ  (wavelength) — controls the spatial scale of the pattern.
-               Fine weave → strong response at small λ.
-               Large print → strong response at large λ.
-
-Per filter we compute:
-  * mean response  — encodes average texture energy at this (θ, λ).
-  * variance       — encodes texture irregularity / randomness.
-
-Feature vector length = n_orientations × n_wavelengths × 2
-                      = 4 × 4 × 2 = 32 dimensions (default).
-
-References
-----------
-Manjunath, B. S., & Ma, W. Y. (1996).
-Texture features for browsing and retrieval of image data.
-IEEE Transactions on Pattern Analysis and Machine Intelligence.
-"""
-
 from __future__ import annotations
 
 from typing import List
@@ -45,28 +10,9 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
 # TextureAnalyzer
-# ---------------------------------------------------------------------------
 
 class TextureAnalyzer:
-    """
-    Builds a Gabor filter bank and extracts a texture signature vector.
-
-    Parameters
-    ----------
-    orientations           : list of float
-        Gabor orientations in *degrees* (converted to radians internally).
-        Typical choice: [0, 45, 90, 135] — four cardinal directions.
-    wavelengths            : list of float
-        Gabor wavelengths (λ) in pixels.  Covers fine-to-coarse scales.
-    sigma_to_lambda_ratio  : float
-        σ = sigma_to_lambda_ratio × λ.  Controls envelope width relative to
-        wavelength.  0.56 is a standard neurologically-inspired value.
-    gabor_aspect_ratio     : float
-        γ — spatial aspect ratio of the Gaussian envelope (γ=1 → isotropic).
-        0.5 makes the filter elongated along the orientation axis.
-    """
 
     def __init__(
         self,
@@ -91,24 +37,10 @@ class TextureAnalyzer:
             d=expected_dims,
         )
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # Public API
 
     def extract(self, segmented_image: np.ndarray) -> np.ndarray:
-        """
-        Compute the Gabor texture signature for a garment image.
 
-        Parameters
-        ----------
-        segmented_image : np.ndarray  shape (H, W, 3) or (H, W), uint8
-            Background-free garment image.  If 3-channel, converted to
-            grayscale internally before filtering.
-
-        Returns
-        -------
-        np.ndarray  shape (n_orientations * n_wavelengths * 2,)  float32
-            [mean_0, var_0, mean_1, var_1, ..., mean_N, var_N]
-            where N = n_orientations × n_wavelengths.
-        """
         gray = self._to_grayscale(segmented_image)
 
         # Mask: treat zero-valued (background) pixels separately so they do
@@ -135,19 +67,10 @@ class TextureAnalyzer:
 
         return np.array(features, dtype=np.float32)
 
-    # ── Private helpers ───────────────────────────────────────────────────────
+    # Private helpers 
 
     def _build_filter_bank(self) -> List[np.ndarray]:
-        """
-        Pre-compute one Gabor kernel per (orientation, wavelength) combination.
 
-        Kernel size is chosen automatically as the smallest odd integer that
-        fits 6σ (three standard deviations on each side).
-
-        Returns
-        -------
-        list of np.ndarray  — list of 2-D float32 Gabor kernels.
-        """
         filter_bank: List[np.ndarray] = []
 
         for wavelength in self.wavelengths:
@@ -162,13 +85,7 @@ class TextureAnalyzer:
             for orientation_deg in self.orientations:
                 theta_rad = np.deg2rad(orientation_deg)
 
-                # cv2.getGaborKernel arguments:
-                #   ksize  — kernel size (must be odd)
-                #   sigma  — std dev of the Gaussian envelope
-                #   theta  — orientation of the normal to the parallel stripes (radians)
-                #   lambd  — wavelength of the cosine factor
-                #   gamma  — spatial aspect ratio
-                #   psi    — phase offset (0 = even/symmetric filter)
+               
                 kernel = cv2.getGaborKernel(
                     ksize,
                     sigma,

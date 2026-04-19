@@ -1,11 +1,4 @@
-"""
-tests/test_features.py
-───────────────────────
-Unit tests for the three explicit CV feature extractors (Module 2):
-    - ColorHarmonyExtractor
-    - TextureAnalyzer
-    - ShapeDescriptor
-"""
+
 
 from __future__ import annotations
 
@@ -22,9 +15,6 @@ from src.features.texture_analyzer import TextureAnalyzer
 from src.features.shape_descriptor import ShapeDescriptor
 
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
 
 def _synthetic_bgr(h: int = 128, w: int = 128) -> np.ndarray:
     """A colourful synthetic BGR image with a white-bordered black background."""
@@ -36,9 +26,6 @@ def _synthetic_bgr(h: int = 128, w: int = 128) -> np.ndarray:
     return img
 
 
-# ---------------------------------------------------------------------------
-# ColorHarmonyExtractor tests
-# ---------------------------------------------------------------------------
 
 class TestColorHarmonyExtractor:
 
@@ -74,10 +61,6 @@ class TestColorHarmonyExtractor:
         assert not np.allclose(extractor.extract(red_img), extractor.extract(blue_img))
 
 
-# ---------------------------------------------------------------------------
-# TextureAnalyzer tests
-# ---------------------------------------------------------------------------
-
 class TestTextureAnalyzer:
 
     def test_output_shape(self):
@@ -112,9 +95,7 @@ class TestTextureAnalyzer:
             "Striped image should have higher texture energy than smooth image"
 
 
-# ---------------------------------------------------------------------------
-# ShapeDescriptor tests
-# ---------------------------------------------------------------------------
+
 
 class TestShapeDescriptor:
 

@@ -1,7 +1,3 @@
-# tests/conftest.py
-# ─────────────────
-# Shared pytest fixtures and configuration.
-# Kept minimal — each test module imports only what it needs.
 
 import sys
 from pathlib import Path

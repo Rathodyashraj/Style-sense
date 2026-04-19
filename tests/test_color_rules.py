@@ -1,15 +1,3 @@
-"""
-tests/test_color_rules.py
-──────────────────────────
-Unit tests for the ColorRuleScorer (src/fusion/color_rule_scorer.py).
-
-Tests verify:
-    * Each individual rule fires correctly on hand-crafted palettes.
-    * Overall score is in [0.0, 1.0].
-    * Output dataclass fields are populated.
-    * Edge cases (achromatic palettes, identical palettes).
-    * analyse_from_vectors() extracts the palette sub-vector correctly.
-"""
 
 from __future__ import annotations
 
@@ -24,9 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.fusion.color_rule_scorer import ColorRuleScorer, ColorHarmonyAnalysis
 
 
-# ---------------------------------------------------------------------------
-# Palette factory helpers
-# ---------------------------------------------------------------------------
+
 
 def _make_palette_flat(
     hues_deg: list,
@@ -61,10 +47,6 @@ def _make_neutral_palette(n_colors: int = 5, chroma: float = 5.0) -> np.ndarray:
         centres.append([lightness, chroma * 0.1, chroma * 0.1])
     return np.array(centres, dtype=np.float32).flatten()
 
-
-# ---------------------------------------------------------------------------
-# Basic interface tests
-# ---------------------------------------------------------------------------
 
 class TestColorRuleScorerInterface:
 
@@ -137,9 +119,6 @@ class TestColorRuleScorerInterface:
         assert isinstance(result, ColorHarmonyAnalysis)
 
 
-# ---------------------------------------------------------------------------
-# Complementary rule
-# ---------------------------------------------------------------------------
 
 class TestComplementaryRule:
 
@@ -170,9 +149,6 @@ class TestComplementaryRule:
         )
 
 
-# ---------------------------------------------------------------------------
-# Analogous rule
-# ---------------------------------------------------------------------------
 
 class TestAnalogousRule:
 
@@ -206,10 +182,6 @@ class TestAnalogousRule:
         assert result.rule_scores["analogous"] >= 0.99
 
 
-# ---------------------------------------------------------------------------
-# Triadic rule
-# ---------------------------------------------------------------------------
-
 class TestTriadicRule:
 
     def test_triadic_fires_at_120_degrees(self):
@@ -229,9 +201,6 @@ class TestTriadicRule:
         assert result.rule_scores["triadic"] >= 0.9
 
 
-# ---------------------------------------------------------------------------
-# Monochromatic rule
-# ---------------------------------------------------------------------------
 
 class TestMonochromaticRule:
 
@@ -264,9 +233,6 @@ class TestMonochromaticRule:
         )
 
 
-# ---------------------------------------------------------------------------
-# Neutral rule
-# ---------------------------------------------------------------------------
 
 class TestNeutralRule:
 
@@ -287,9 +253,6 @@ class TestNeutralRule:
         assert result.rule_scores["neutral"] < 0.2
 
 
-# ---------------------------------------------------------------------------
-# analyse_from_vectors() helper
-# ---------------------------------------------------------------------------
 
 class TestAnalyseFromVectors:
 
@@ -330,10 +293,6 @@ class TestAnalyseFromVectors:
         with pytest.raises(ValueError):
             scorer.analyse(bad_shape, bad_shape)
 
-
-# ---------------------------------------------------------------------------
-# Hue geometry helpers
-# ---------------------------------------------------------------------------
 
 class TestHueGeometry:
 

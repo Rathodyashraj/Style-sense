@@ -1,27 +1,3 @@
-"""
-src/models/svm_classifier.py
-─────────────────────────────
-SVM-based outfit compatibility classifier.
-
-Why SVM?
---------
-Support Vector Machines find the maximum-margin hyperplane separating
-compatible from incompatible outfit pairs.  With an RBF kernel they can
-model non-linear boundaries in the pairwise feature space.
-
-Advantages for this task:
-  * Works well with thousands (rather than millions) of training samples.
-  * Training is deterministic and reproducible.
-  * ``predict_proba`` (via Platt scaling) gives calibrated probabilities
-    that are converted to the 0–100 % harmony score.
-
-Training note
--------------
-The pairwise feature vector is high-dimensional (~3000 dims). Before fitting
-we apply PCA to reduce to a manageable number of components, which also
-speeds up the RBF kernel computations.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -39,22 +15,9 @@ from src.utils.logger import get_logger
 log = get_logger(__name__)
 
 
-# ---------------------------------------------------------------------------
 # SVMCompatibilityClassifier
-# ---------------------------------------------------------------------------
 
 class SVMCompatibilityClassifier:
-    """
-    Sklearn Pipeline of [StandardScaler → PCA → SVC(RBF, probability=True)].
-
-    Parameters
-    ----------
-    kernel      : str    — SVM kernel ('rbf', 'linear', 'poly').
-    C           : float  — Regularisation parameter.
-    gamma       : str    — RBF kernel coefficient.
-    pca_n_components : int | None
-        Dimensions to keep after PCA.  None = skip PCA.
-    """
 
     def __init__(
         self,
@@ -76,7 +39,7 @@ class SVMCompatibilityClassifier:
             kernel, C, gamma, pca_n_components,
         )
 
-    # ── Training ──────────────────────────────────────────────────────────────
+    # Training
 
     def fit(
         self,
@@ -85,19 +48,7 @@ class SVMCompatibilityClassifier:
         X_val:   Optional[np.ndarray] = None,
         y_val:   Optional[np.ndarray] = None,
     ) -> "SVMCompatibilityClassifier":
-        """
-        Fit the SVM pipeline on pairwise training features.
 
-        Parameters
-        ----------
-        X_train : np.ndarray  shape (N_train, D_pairwise)
-        y_train : np.ndarray  shape (N_train,)  — int labels 0 or 1
-        X_val, y_val : optional validation arrays for post-fit reporting.
-
-        Returns
-        -------
-        self
-        """
         steps = [("scaler", StandardScaler())]
 
         if self.pca_n_components is not None:
@@ -124,7 +75,7 @@ class SVMCompatibilityClassifier:
         self._is_fitted = True
         log.info("SVM training complete.")
 
-        # ── Validation report ─────────────────────────────────────────────────
+        # Validation report
         train_acc = (self._pipeline.predict(X_train) == y_train).mean()
         log.info("Train accuracy: {:.4f}", train_acc)
 
@@ -134,16 +85,10 @@ class SVMCompatibilityClassifier:
 
         return self
 
-    # ── Inference ─────────────────────────────────────────────────────────────
+    # Inference
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        """
-        Return class probabilities for each sample.
 
-        Returns
-        -------
-        np.ndarray  shape (N, 2)  — columns: [P(incompatible), P(compatible)]
-        """
         self._assert_fitted()
         return self._pipeline.predict_proba(X).astype(np.float32)
 
@@ -153,23 +98,13 @@ class SVMCompatibilityClassifier:
         return self._pipeline.predict(X)
 
     def score_single_pair(self, pairwise_feature: np.ndarray) -> float:
-        """
-        Return the compatibility probability (0.0–1.0) for a single pair.
 
-        Parameters
-        ----------
-        pairwise_feature : np.ndarray  shape (D_pairwise,)
-
-        Returns
-        -------
-        float — P(compatible)
-        """
         self._assert_fitted()
         x = pairwise_feature.reshape(1, -1)
         prob_compatible = float(self._pipeline.predict_proba(x)[0, 1])
         return prob_compatible
 
-    # ── Persistence ───────────────────────────────────────────────────────────
+    # Persistence
 
     def save(self, path: str | Path) -> None:
         """Serialise the fitted pipeline to disk using joblib."""
@@ -189,7 +124,7 @@ class SVMCompatibilityClassifier:
         log.info("SVM pipeline loaded from {p}", p=path)
         return self
 
-    # ── Internal ─────────────────────────────────────────────────────────────
+    # Internal
 
     def _assert_fitted(self) -> None:
         if not self._is_fitted:

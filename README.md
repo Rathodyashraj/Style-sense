@@ -79,8 +79,13 @@ python scripts/evaluate.py --split test
 # 6. Score a single outfit pair interactively
 python scripts/infer.py --item1 path/to/shirt.jpg --item2 path/to/pants.jpg
 ```
-python scripts/infer.py --item1 /home/yashraj/Documents/project/outfit_compatibility_final/data/polyvore/images/100010727_8.jpg --item2 /home/yashraj/Documents/project/outfit_compatibility_final/data/polyvore/images/100029003_1.jpg
+python scripts/infer.py \
+  --item1 /home/yashraj/Documents/project/outfit_compatibility_final/data/polyvore/images/100219114_2.jpg \
+  --item2 /home/yashraj/Documents/project/outfit_compatibility_final/data/polyvore/images/100277667_3.jpg
 
+python scripts/infer.py \
+  --item1 /home/yashraj/Documents/project/outfit_compatibility_final/data/polyvore/images/100002074_1.jpg \
+  --item2 /home/yashraj/Documents/project/outfit_compatibility_final/data/polyvore/images/100002074_2.jpg
 
 
 ---

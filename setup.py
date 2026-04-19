@@ -1,15 +1,4 @@
-"""
-setup.py
-─────────
-Minimal setup script for installing the outfit_compatibility package in
-development mode:
 
-    pip install -e .
-
-This allows scripts and notebooks to do ``from src.features import ...``
-without needing to manipulate sys.path manually, and enables IDE auto-complete
-and type-checking across the entire project tree.
-"""
 
 from setuptools import setup, find_packages
 

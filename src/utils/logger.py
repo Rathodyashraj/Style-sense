@@ -1,13 +1,3 @@
-"""
-src/utils/logger.py
-───────────────────
-Centralised logging setup using *loguru*.
-
-Usage (in any module):
-    from src.utils.logger import get_logger
-    log = get_logger(__name__)
-    log.info("Processing item {item_id}", item_id="abc123")
-"""
 
 from __future__ import annotations
 
@@ -17,14 +7,11 @@ from pathlib import Path
 from loguru import logger
 
 
-# ---------------------------------------------------------------------------
-# Module-level initialisation — runs once when first imported
-# ---------------------------------------------------------------------------
+
 
 # Remove the default loguru sink so we control formatting entirely.
 logger.remove()
 
-# ── Human-readable console sink ───────────────────────────────────────────────
 logger.add(
     sys.stderr,
     level="INFO",
@@ -38,7 +25,7 @@ logger.add(
     enqueue=True,          # thread-safe async logging
 )
 
-# ── Persistent file sink (rotates at 50 MB, keeps 10 compressed files) ───────
+
 _LOG_DIR = Path(__file__).resolve().parents[2] / "outputs" / "logs"
 _LOG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -53,15 +40,6 @@ logger.add(
 )
 
 
-# ---------------------------------------------------------------------------
-# Public helper
-# ---------------------------------------------------------------------------
 
 def get_logger(name: str):
-    """
-    Return a loguru logger bound to *name* (typically ``__name__``).
-
-    The returned object is the global *logger* with the module name bound,
-    so all log records carry the originating module automatically.
-    """
     return logger.bind(name=name)
